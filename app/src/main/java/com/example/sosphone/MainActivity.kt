@@ -6,210 +6,265 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.sosphone.databinding.ActivityPpalBinding
-import android.Manifest
 import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.example.sosphone.databinding.ActivityPpalBinding
+import java.net.URLEncoder
 
+/**
+ * Activity Principal (Pantalla de Acciones).
+ *
+ * Esta es la pantalla principal de la aplicación. Muestra los datos de contacto
+ * configurados (teléfono, email, etc.) y proporciona botones de acción rápida para:
+ * 1. Realizar una llamada de emergencia.
+ * 2. Abrir una URL en el navegador.
+ * 3. Abrir una ubicación en la app de mapas.
+ * 4. Enviar un email.
+ *
+ * También gestiona el permiso de llamada (CALL_PHONE) y permite al usuario
+ * volver a la [ConfActivity] para reconfigurar los datos.
+ */
 class MainActivity : AppCompatActivity() {
-    private lateinit var mainBinding : ActivityPpalBinding
-    private  var phoneSOS : String? = null
-    //Acepta como lanzador un string que representa el permiso a solicitar.
+
+    private lateinit var mainBinding: ActivityPpalBinding
+
+    private var phoneSOS: String? = null
+    private var emailSOS: String? = null
+    private var urlSOS: String? = null
+    private var ubicationSOS: String? = null
+
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+
     private var permisionPhone = false
 
 
-
+    /**
+     * Método principal del ciclo de vida. Se llama al crear la Activity.
+     * Aquí se infla la vista (ViewBinding) y se inicializan los componentes
+     * y listeners principales.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mainBinding = ActivityPpalBinding.inflate(layoutInflater)
         setContentView(mainBinding.root)
 
-        enableEdgeToEdge()
-        ViewCompat.setOnApplyWindowInsetsListener(mainBinding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
         init()
-        initEventCall()
-
+        initActionButtons()
     }
 
-    /*
-    Cada vez que vuelve el Activity a la cabeza de la pila,
-    debemos de volver a seleccionar el phone pasado mediante el intent
-    desde el Activity 1.
+    /**
+     * Se llama cada vez que la Activity vuelve a primer plano.
+     * Es el lugar ideal para refrescar la UI con los datos más recientes
+     * (ya que podemos volver desde ConfActivity con datos nuevos).
      */
     override fun onResume() {
         super.onResume()
         permisionPhone = isPermissionCall()
-        val stringPhone  = getString(R.string.string_phone)
-        phoneSOS = intent.getStringExtra(stringPhone)
-        mainBinding.txtPhone.setText(phoneSOS)
 
+        phoneSOS = intent.getStringExtra(getString(R.string.string_phone))
+        emailSOS = intent.getStringExtra(getString(R.string.string_email))
+        urlSOS = intent.getStringExtra(getString(R.string.string_url))
+        ubicationSOS = intent.getStringExtra(getString(R.string.string_ubication))
 
     }
 
-
-
-    private fun init(){
+    /**
+     * Inicializa los componentes que solo necesitan configurarse una vez,
+     * como el launcher de permisos y el botón para ir a la configuración.
+     */
+    private fun init() {
         registerLauncher()
-        if (!isPermissionCall()) //verificamos permisos en de llamada.
-            requestPermissionLauncher.launch(Manifest.permission. CALL_PHONE)
+
+        if (!isPermissionCall())
+            requestPermissionLauncher.launch(android.Manifest.permission.CALL_PHONE)
 
         mainBinding.ivChangePhone.setOnClickListener {
             val nameSharedFich = getString(R.string.name_preferen_shared_fich)
+
             val nameSharedPhone = getString(R.string.name_shared_phone)
+            val nameSharedEmail = getString(R.string.name_shared_email)
+            val nameSharedUrl = getString(R.string.name_sared_url)
+            val nameSharedUbication = getString(R.string.name_shared_ubication)
+
             val sharedFich = getSharedPreferences(nameSharedFich, Context.MODE_PRIVATE)
             val edit = sharedFich.edit()
             edit.remove(nameSharedPhone)
+            edit.remove(nameSharedEmail)
+            edit.remove(nameSharedUrl)
+            edit.remove(nameSharedUbication)
             edit.apply()
+
             val intent = Intent(this, ConfActivity::class.java )
                 .apply {
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    putExtra("back", true)//volvemos desde El ACtivity2
+
+                    putExtra("back_phone", true)
+                    putExtra("back_email",true)
+                    putExtra("back_url",true)
+                    putExtra("back_ubication",true)
                 }
             startActivity(intent)
         }
-
     }
 
-
-    /*
-        Para registrar una petición de permisos que aún no se ha lanzado....
-
-        - Con ActivityResultContracts.RequestPermission(), indicamos a Android
-        que solicitamos un único permiso peligroso.
-        - la lambda,es la lógica que queremos hacer, cuando el usuario haya pulsado
-        aceptar/denegar el permiso solicitado.
-    */
-    private fun registerLauncher(){
+    /**
+     * Registra el "Activity Result Launcher" para manejar la respuesta
+     * del usuario a la solicitud de permiso de CALL_PHONE.
+     */
+    private fun registerLauncher() {
         requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()) { //lambda
-            /*
-            Se ejecuta esta lambda, cuando el usuario pulsa aceptar/denegar
-             */
-                isGranted->
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
             if (isGranted) {
                 permisionPhone = true
-            }
-            else {
-                Toast.makeText( this, "Necesitas habilitar los permisos",
-                    Toast.LENGTH_LONG).show()
-                goToConfiguracionApp()  //abrimos la configuración de la aplicación.
+            } else {
+                Toast.makeText(
+                    this, "Necesitas habilitar los permisos de llamada",
+                    Toast.LENGTH_LONG
+                ).show()
+                goToConfiguracionApp()
             }
         }
     }
 
-
-    //inicia el proceso de llamada, junto con la petición de permisos.
-    private fun initEventCall() {
-        mainBinding.button.setOnClickListener {
-            permisionPhone=isPermissionCall()
-            if (permisionPhone)
-                call()
-            else
-                requestPermissionLauncher.launch(Manifest.permission. CALL_PHONE)
-        }
-    }
-    private fun isPermissionCall():Boolean{
-        //Para versión del sdk inferior a la API 23, no hace falta pedir permisos en t. ejecución.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
-            return true  //no hace falta pedir permisos en t. real al usuario
-        else
-            return isPermissionToUser() //Hay que ver si se concedieron en ejecución o no.
-    }
-
-    /*
-    - ContextCompat es un objeto que accede a funciones del sistema.
-    - PackageManager es el encargado de saber qué paquetes tiene instalado y qué permisos fueron concedidos.
-    1.- Comprueba que el permiso fue concedido. Para ello, debe tener un valor de 0.
-    2.- Si devuelve -1, es que el permiso no fue concedido.
+    /**
+     * Configura los listeners OnClick para los 4 botones de acción principales.
+     * (Llamar, Abrir URL, Abrir Mapas, Enviar Email).
+     *
+     * ADVERTENCIA: Los Intents implícitos (URL, Mapas, Email) no usan try-catch.
+     * Si el usuario no tiene una app que pueda manejar la acción (ej. no tiene
+     * app de mapas), la aplicación CRASHEARÁ.
+     * La forma segura es usar `intent.resolveActivity(packageManager) != null`.
      */
-    private fun isPermissionToUser() = ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
+    private fun initActionButtons() {
 
-    /*
-    Realizamos la petición de llamada.
-    1.- Es una intención y por tanto un intent implícito.
-    2.- Una URI, es la forma común que identificar un recurso. Los intent, necesitan encapsular
-    un objeto de tipo URI, representando algo común para todas las intenciones.
-         - Una llamada telefónica, una web, geo, un mail, un fichero son recursos que hay que pasar al Intent
-         - Necesitamos convertir un string a Uri, para ello utilizamos la función parse.
+        mainBinding.button.setOnClickListener {
+            permisionPhone = isPermissionCall()
+            if (permisionPhone) {
+                call()
+            } else {
+                requestPermissionLauncher.launch(android.Manifest.permission.CALL_PHONE)
+            }
+        }
 
-    - Intent  ¿Qué quieres hacer?
-    - Uri   ¿Con qué recurso?
+        mainBinding.btnOpenUrl.setOnClickListener {
+            if (urlSOS.isNullOrEmpty()) {
+                Toast.makeText(this, "No hay URL configurada", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            var completeUrl = urlSOS!!
+            if (!completeUrl.startsWith("http://") && !completeUrl.startsWith("https://")) {
+                completeUrl = "http://$completeUrl"
+            }
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(completeUrl))
+            startActivity(intent)
+        }
+
+        mainBinding.btnOpenLocation.setOnClickListener {
+            if (ubicationSOS.isNullOrEmpty()) {
+                Toast.makeText(this, "No hay ubicación configurada", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val encodedAddress = Uri.encode(ubicationSOS)
+            val gmmIntentUri = Uri.parse("geo:0,0?q=$encodedAddress")
+            val intent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+            startActivity(intent)
+        }
+
+        mainBinding.btnOpenEmail.setOnClickListener {
+            if (emailSOS.isNullOrEmpty()) {
+                Toast.makeText(this, "No hay email configurado", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:$emailSOS")
+                putExtra(Intent.EXTRA_SUBJECT, "Asunto del correo")
+                putExtra(Intent.EXTRA_TEXT, "Cuerpo del mensaje")
+            }
+
+            startActivity(intent)
+        }
+    }
+
+
+    /**
+     * Comprueba si la app tiene permiso para realizar llamadas (CALL_PHONE).
+     * Delega la comprobación real a [isPermissionToUser] si la versión
+     * de Android es M (API 23) o superior.
+     *
+     * @return `true` si el permiso está concedido o no es necesario (APIs < 23),
+     * `false` si el permiso está denegado y se necesita (APIs >= 23).
+     */
+    private fun isPermissionCall(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true
+        } else {
+            return isPermissionToUser()
+        }
+    }
+
+    /**
+     * Verifica si el permiso CALL_PHONE ha sido concedido explícitamente por el usuario.
+     *
+     * @return `true` si el permiso [PackageManager.PERMISSION_GRANTED], `false` en caso contrario.
+     */
+    private fun isPermissionToUser(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.CALL_PHONE
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * Inicia una llamada telefónica directa (ACTION_CALL) usando el [phoneSOS].
+     * Requiere que el permiso [isPermissionCall] sea `true`.
+     * Si [phoneSOS] es nulo o vacío, muestra un Toast.
      */
     private fun call() {
-        val intent = Intent(Intent.ACTION_CALL).apply {  //creamos la intención
-            //Indicamos la Uri que es la forma de indicarle a Android que es un teléfono.
-            data = Uri.parse("tel:"+phoneSOS!!)
+        if (phoneSOS.isNullOrEmpty()) {
+            Toast.makeText(this, "No hay teléfono de emergencia configurado", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(Intent.ACTION_CALL).apply {
+            data = Uri.parse("tel:$phoneSOS")
         }
         startActivity(intent)
     }
 
-/*
-Queremos abrir la configuración de configuración de una aplicación en concreto.
-1.- Settings es una clase del sistema operativo, que contiene utilidades para abrir configuraciones.
-2.- Con ACTION_APPLICATION_DETAILS_SETTINGS, indicamos detalles de una aplicación en cuestión.
-3.- Necesitamos una URI, que represente el recurso a la intención, para ello hay que pasarle qué
-aplicación queremos que muestre sus detalles de configuración. Con Uri.fromParts, convertimos a una
-Uri, del que desglosamos por partes los parámetros. En una llamada telef´nica, no necesitamos separar
-en partes tel:112, pero en otro tipo de recursos, si. Imagina una web dinámica al que tenemos que pasarle
-un parámetro con un valor u otro.
-    - "package"  identifica que queremos trabajar con un paquete y por tanto aplicación única.
-    - packageName identifica nuestra aplicación como paquete  com.example.sosphone
-    - null (no utilizamos fragmentos)
- */
-    private fun goToConfiguracionApp(){
+    /**
+     * Abre la pantalla de configuración de permisos específica para esta aplicación.
+     * Útil si el usuario deniega un permiso y queremos facilitarle que lo active.
+     */
+    private fun goToConfiguracionApp() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", packageName, null)
         }
-
         startActivity(intent)
     }
 
-    /*
-    Con el flag Intent.FLAG_ACTIVITY_REORDER_TO_FRONT indicamos que el Activity no se vuelva a crear,
-    sino que se traiga al frente de la pila de actividades (back stack) si ya existe.
-
-    Sin embargo, cada vez que se llama a startActivity(), Android crea un nuevo objeto Intent,
-    aunque la actividad destino ya exista en memoria.
-
-    El problema es que, al reactivar una actividad existente mediante este flag, dicha actividad
-    conserva el Intent anterior (el que tenía al crearse originalmente) y no recibe automáticamente
-    los nuevos datos que se hayan añadido con putExtra().
-
-    Para solucionar este comportamiento, debemos sobrescribir el método onNewIntent(),
-    el cual se invoca cuando una actividad existente recibe un nuevo Intent o tiene el flag .
-    Dentro de este método, basta con llamar a setIntent(intent) para reemplazar
-    el Intent antiguo por el nuevo y así disponer de los extras actualizados.
- */
-    //Main
+    /**
+     * Se llama cuando esta Activity (MainActivity) recibe un nuevo Intent mientras
+     * ya está en la pila (ej. cuando volvemos desde ConfActivity con los flags
+     * SINGLE_TOP o CLEAR_TOP).
+     *
+     * Es crucial actualizar el Intent de la Activity con [setIntent] para que
+     * [onResume] pueda leer los nuevos datos (extras).
+     *
+     * @param intent El nuevo Intent que recibe la Activity.
+     */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent) // Actualiza el Intent con los nuevos extras
+        setIntent(intent)
     }
-
 }
-
-/*
-1. Registro del permiso:
-Cuando llamamos a registerForActivityResult(), registramos el contrato (en este caso, ActivityResultContracts.RequestPermission()) y, al mismo tiempo, proporcionamos una función lambda. Esta lambda define lo que queremos que suceda cuando el usuario acepte o deniegue el permiso.
-
-En este momento, todavía no estamos solicitando el permiso, simplemente estamos "preparando" la acción que ocurrirá después de que el usuario interactúe con la solicitud de permiso.
-
-2. Lanzamiento del permiso:
-Cuando llamas a launch(), es cuando realmente se solicita el permiso al usuario. Esto hará que aparezca el diálogo de solicitud de permiso en la pantalla del dispositivo (el diálogo en el que el usuario puede aceptar o denegar el permiso).
-
-3. Respuesta del usuario:
-Si el usuario acepta o deniega el permiso, esa respuesta activa la lambda que registraste previamente en registerForActivityResult().
-La lambda es una función de orden superior que recibe como argumento el resultado de la acción del usuario (es decir, si el permiso fue concedido o no).
- */

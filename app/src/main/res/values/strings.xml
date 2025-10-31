@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SOSPhone</string>
+    <string name="app_name">practicaBotones</string>
 
 
     <!-- Fichero de preferencias compartidas -->
@@ -7,14 +7,26 @@
 
     <!-- Clave a almacenar -->
     <string name="name_shared_phone">phone_number</string>
-    <string name="txt_configuracion">Configura el teléfono de SOS</string>
+    <string name="name_shared_email">email</string>
+    <string name="name_shared_ubication">ubication</string>
+    <string name="name_sared_url">url</string>
+    <string name="txt_rellenar">Rellena todos los campos para acceder: </string>
     <string name="txt_phone">Número de Teléfono:</string>
+    <string name="txt_email">Email:</string>
+    <string name="txt_gps">Calle y número (Ej: Av. de Andalucía, 69):</string>
+    <string name="txt_url">URL:</string>
     <string name="txt_boton_aceptar">Aceptar</string>
     <string name="txt_version_app">V1.0 (App 2DAM)</string>
 
     <string name="msg_empty_phone">Debes introducir un teléfono válido</string>
+    <string name="msg_empty_email">Debes introducir un email válido</string>
     <string name="msg_not_valid_phone">Teléfono no válido</string>
     <string name="msg_new_phone">Debes poner un nuevo teléfono</string>
     <string name="txt_SOS">Llamar SOS</string>
+
     <string name="string_phone">phone</string>
+    <string name="string_url">url</string>
+    <string name="string_ubication">ubication</string>
+    <string name="string_email">email</string>
+
 </resources>

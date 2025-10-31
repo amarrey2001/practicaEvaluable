@@ -4,124 +4,234 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.telephony.PhoneNumberUtils
+import android.util.Patterns
+import android.widget.Button
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.sosphone.databinding.ActivityConfBinding
 import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
+import java.util.Calendar
 
+/**
+ * Activity de Configuración Inicial.
+ *
+ * Esta pantalla es responsable de capturar y guardar los datos esenciales del usuario
+ * (teléfono, email, URL, ubicación) en SharedPreferences.
+ *
+ * Si detecta que el teléfono (campo obligatorio) ya está configurado,
+ * redirige automáticamente a [MainActivity].
+ *
+ * También gestiona la "vuelta" desde [MainActivity] (a través de [onNewIntent] y [onResume])
+ * para modificar campos específicos.
+ */
 class ConfActivity : AppCompatActivity() {
 
     private lateinit var confBinding: ActivityConfBinding
     private lateinit var sharedFich: SharedPreferences
     private lateinit var nameSharedPhone: String
+    private lateinit var nameSharedEmail: String
+    private lateinit var nameSharedUbication: String
+    private lateinit var nameSharedUrl: String
 
+    /**
+     * Método principal del ciclo de vida. Se llama al crear la Activity.
+     * Infla la vista (ViewBinding), inicializa las SharedPreferences [initPreferentShared]
+     * y ejecuta la lógica principal [start].
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        //layoutInflater, es el objeto que se encarga de inflar las vistas de la interfaz.
         confBinding = ActivityConfBinding.inflate(layoutInflater)
-
-        //activityMaiinBinding, ya es el objeto con las views infladas.
-        //insertamos la IU del activity, a partir de la raiz del árbol generado de views,
         setContentView(confBinding.root)
-    //    confBinding.
 
-        // Llamamos a la función que habilita el modo de borde a borde
-        //enableEdgeToEdge()
-
-        //Ajustamos los margenes con binding.
-       /* ViewCompat.setOnApplyWindowInsetsListener(confBinding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-*/
         initPreferentShared()
         start()
     }
 
+    /**
+     * Inicializa la instancia de SharedPreferences y carga los nombres (claves)
+     * de los campos desde `strings.xml` para usarlos en toda la clase.
+     */
     private fun initPreferentShared() {
         val nameSharedFich = getString(R.string.name_preferen_shared_fich)
         this.nameSharedPhone = getString(R.string.name_shared_phone)
+        this.nameSharedEmail = getString(R.string.name_shared_email)
+        this.nameSharedUrl = getString(R.string.name_sared_url)
+        this.nameSharedUbication = getString(R.string.name_shared_ubication)
 
-        //Abrimos el fichero de preferencias compartidas privada.
         this.sharedFich = getSharedPreferences(nameSharedFich, Context.MODE_PRIVATE)
     }
 
+    /**
+     * Se llama cada vez que la Activity vuelve a primer plano.
+     *
+     * Comprueba si el Intent (actualizado por [onNewIntent]) contiene extras especiales
+     * ("back_phone", "back_email", etc.). Esto indica que el usuario vuelve
+     * desde [MainActivity] para editar un campo.
+     *
+     * Si es así, limpia el campo correspondiente y muestra un Toast
+     * para que el usuario introduzca un nuevo valor.
+     */
     override fun onResume() {
         super.onResume()
-        val ret = intent.getBooleanExtra("back", false)
-        if (ret){
+
+        val retPhone = intent.getBooleanExtra("back_phone", false)
+        if (retPhone) {
             confBinding.editPhone.setText("")
             Toast.makeText(this, R.string.msg_new_phone, Toast.LENGTH_LONG).show()
-            intent.removeExtra("back")  //por si se interrumpe.
+            intent.removeExtra("back_phone")
+        }
+
+        val retEmail = intent.getBooleanExtra("back_email", false)
+        if (retEmail) {
+            confBinding.editEmail.setText("")
+            Toast.makeText(this, R.string.msg_empty_email, Toast.LENGTH_LONG).show()
+            intent.removeExtra("back_email")
+        }
+
+        val retUrl = intent.getBooleanExtra("back_url", false)
+        if (retUrl) {
+            confBinding.editUrl.setText("")
+            Toast.makeText(this, "Introduce la nueva URL", Toast.LENGTH_LONG).show()
+            intent.removeExtra("back_url")
+        }
+
+        val retUbication = intent.getBooleanExtra("back_ubication", false)
+        if (retUbication) {
+            confBinding.editGps.setText("")
+            Toast.makeText(this, "Introduce la nueva Ubicación", Toast.LENGTH_LONG).show()
+            intent.removeExtra("back_ubication")
         }
     }
 
-    private fun start(){
-        //buscamos la preferencia del phone guardada. En caso de que no esté, será null
-        val sharedPhone : String?  = sharedFich.getString(nameSharedPhone, null)
+    /**
+     * Lógica principal de la Activity.
+     *
+     * 1. Carga todos los datos guardados de SharedPreferences.
+     * 2. Si el teléfono (campo obligatorio) ya existe, navega a [MainActivity] y cierra esta.
+     * 3. Si no existe, rellena los campos de texto con los datos guardados (si los hay).
+     * 4. Configura el listener del botón "Guardar" (`btnConf`).
+     * 5. Al pulsar "Guardar", valida los campos (teléfono obligatorio, email y URL opcionales),
+     * guarda todo en SharedPreferences y navega a [MainActivity].
+     */
+    private fun start() {
 
-        sharedPhone?.let {
-            startMainActivity(it)
+        val sharedPhone: String? = sharedFich.getString(nameSharedPhone, null)
+        val sharedEmail: String? = sharedFich.getString(nameSharedEmail, null)
+        val sharedUrl: String? = sharedFich.getString(nameSharedUrl, null)
+        val sharedUbication: String? = sharedFich.getString(nameSharedUbication, null)
+
+
+        if (sharedPhone != null) {
+            startMainActivity(sharedPhone, sharedEmail, sharedUrl, sharedUbication)
+            finish()
+            return
         }
+
+        confBinding.editPhone.setText(sharedPhone)
+        confBinding.editEmail.setText(sharedEmail)
+        confBinding.editUrl.setText(sharedUrl)
+        confBinding.editGps.setText(sharedUbication)
 
         confBinding.btnConf.setOnClickListener {
             val numberPhone = confBinding.editPhone.text.toString()
-            if (numberPhone.isEmpty())
+            val email = confBinding.editEmail.text.toString()
+            val url = confBinding.editUrl.text.toString()
+            val ubication = confBinding.editGps.text.toString()
+
+
+            if (numberPhone.isEmpty()) {
                 Toast.makeText(this, R.string.msg_empty_phone, Toast.LENGTH_LONG).show()
-            else
-                if (!isValidPhoneNumber2(numberPhone, "ES"))
-                    Toast.makeText(this, R.string.msg_not_valid_phone, Toast.LENGTH_LONG).show()
-                else{
-                    //registramos el teléfono, ya que es válido.
-                    val edit = sharedFich.edit()
-                    edit.putString(nameSharedPhone, numberPhone)
-                    edit.apply()
-                    startMainActivity(numberPhone)
-                }
+            }else if (!isValidPhoneNumber2(numberPhone, "ES")) {
+                Toast.makeText(this, R.string.msg_not_valid_phone, Toast.LENGTH_LONG).show()
+            }else if (email.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                Toast.makeText(this, "El formato del email no es válido", Toast.LENGTH_LONG).show()
+            }else if (url.isNotEmpty() && !Patterns.WEB_URL.matcher(url).matches()) {
+                Toast.makeText(this, "El formato de la URL no es válido", Toast.LENGTH_LONG).show()
+            }else{
+                val edit = sharedFich.edit()
+                edit.putString(nameSharedPhone, numberPhone)
+                edit.putString(nameSharedEmail, email.ifEmpty { null })
+                edit.putString(nameSharedUrl, url.ifEmpty { null })
+                edit.putString(nameSharedUbication, ubication.ifEmpty { null })
+                edit.apply()
+
+                startMainActivity(
+                    numberPhone,
+                    email.ifEmpty { null },
+                    url.ifEmpty { null },
+                    ubication.ifEmpty { null }
+                )
+            }
+        }
+
+        confBinding.btnAlarma.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.MINUTE, 2)
+
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val minutes = calendar.get(Calendar.MINUTE)
+
+
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minutes)
+                putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+                putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "Alarma SOS")
+            }
+            startActivity(intent)
         }
     }
 
 
-    private fun startMainActivity(phone: String) {
+    /**
+     * Inicia [MainActivity] y le pasa todos los datos de configuración como extras.
+     * Utiliza flags (CLEAR_TOP, SINGLE_TOP) para asegurar que [MainActivity]
+     * no se apile múltiples veces y reciba los datos en [onNewIntent].
+     *
+     * @param phone El número de teléfono (Obligatorio).
+     * @param email El email del usuario (Opcional, puede ser null).
+     * @param url La URL asociada (Opcional, puede ser null).
+     * @param ubication La ubicación guardada (Opcional, puede ser null).
+     */
+    private fun startMainActivity(phone: String, email: String?, url: String?, ubication: String?) {
         val intent = Intent(this@ConfActivity, MainActivity::class.java)
         intent.apply {
             putExtra(getString(R.string.string_phone), phone)
-            //ese Flag, no volverá a crear una instancia del intent. Será la misma
-            /*
-            1.- No crean una nueva instancia de Activity. Por defecto y sin flags, se crearán en la pila
-            tantas instancias como veces llames al Activity. Esto no es lo que queremos.
-            2.- El flag CLEAR_TOP, lo que hace es eliminar todas las instancias de activitys que hayan
-            por encima del que se quiere lanzar y por tanto, vuelve a la cabeza de la pila
-            3.- el flag single_top, significa que sólo se creará una instancia del activity aunque se haya
-            llamado 20 veces al mismo.
-            4.- Estos flags, provocan que se ejecute el método onNewIntent en el Activity que se quiere volver
-            a llamar. De esa forma, puede refrescar el intent con los nuevos datos.
-             */
-            //FLAG_ACTIVITY_REORDER_TO_FRONT
+            putExtra(getString(R.string.string_email), email)
+            putExtra(getString(R.string.string_ubication), ubication)
+            putExtra(getString(R.string.string_url), url)
+
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        startActivity(intent ) //lanzamos el Activity
+        startActivity(intent)
     }
 
-
-    //clase de Android que valida un teléfono.
+    /**
+     * Validador de teléfono simple usando las utilidades base de Android.
+     * (No se usa actualmente, se prefiere [isValidPhoneNumber2]).
+     *
+     * @param phoneNumber El número a validar.
+     * @return `true` si es un número global válido.
+     */
     private fun isValidPhoneNumber(phoneNumber: String): Boolean {
         return PhoneNumberUtils.isGlobalPhoneNumber(phoneNumber)
     }
 
+    /**
+     * Validador de teléfono avanzado usando la librería 'libphonenumber' de Google.
+     * Es más preciso y permite validación regional.
+     *
+     * @param phoneNumber El número de teléfono a validar (ej. "600111222").
+     * @param countryCode El código del país (ej. "ES" para España) para la validación regional.
+     * @return `true` si el número es válido para la región, `false` si ocurre un error o no es válido.
+     */
     fun isValidPhoneNumber2(phoneNumber: String, countryCode: String): Boolean {
         val phoneUtil = PhoneNumberUtil.getInstance()
         return try {
-            // Parseamos el número de teléfono en base al código de país proporcionado
             val number = phoneUtil.parse(phoneNumber, countryCode)
-            // Verificamos si es un número válido para el país especificado
             phoneUtil.isValidNumber(number)
         } catch (e: NumberParseException) {
             e.printStackTrace()
@@ -129,17 +239,18 @@ class ConfActivity : AppCompatActivity() {
         }
     }
 
- /*
- Necesitamos sobreescribie este método, porque es el intent actualizado que utilizó
- el activity MainActivity con el booleano ret a true. Esto es porque la instancia
- creada en MainActivity, es el mismo y por sí sólo, cuando volvemos a modificar el intent
- con nuevos datos, de manera implícita no lo actualiza el Activity ConfActivity, por ello
- necesitamos sobreescribir este método, para que actualize el intent recibido con los
- nuevos datos.
-  */
-    //Conf
+    /**
+     * Se llama cuando esta Activity (ConfActivity) recibe un nuevo Intent mientras
+     * ya está en la pila (ej. cuando [MainActivity] vuelve a nosotros usando
+     * los flags SINGLE_TOP o CLEAR_TOP).
+     *
+     * Es crucial actualizar el Intent de la Activity con [setIntent] para que
+     * [onResume] pueda leer los nuevos datos (extras) que vienen en el Intent.
+     *
+     * @param intent El nuevo Intent que recibe la Activity.
+     */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent) // Actualiza el Intent con los nuevos extras
+        setIntent(intent)
     }
 }
