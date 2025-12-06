@@ -3,7 +3,7 @@
 Este proyecto en Kotlin para Android implementa una aplicación de dos pantallas. Su objetivo es proporcionar una interfaz simple para configurar datos de contacto de emergencia y ofrecer acciones rápidas para usarlos.
 
 1.  **`ConfActivity`**: Pantalla de configuración inicial de datos de emergencia (teléfono, email, URL y ubicación).
-2.  **`MainActivity`**: Pantalla principal con botones de acción rápida (Llamar, Enviar Email, Abrir URL, Abrir Ubicación).
+2.  **`MainActivity`**: Pantalla principal con botones de acción rápida (Llamar, Enviar Email, Abrir URL, Abrir Ubicación, etc.).
 
 ---
 
@@ -39,20 +39,22 @@ Esta Activity es la pantalla operativa, diseñada para ejecutar acciones de emer
 
 ### Gestión de Permisos de Llamada
 * **Permiso Dinámico**: Utiliza **`ActivityResultLauncher`** para solicitar en tiempo de ejecución el permiso **`android.Manifest.permission.CALL_PHONE`**.
-* **Manejo de Denegación**: Si el usuario deniega el permiso, se proporciona un acceso directo a la configuración de la aplicación (`goToConfiguracionApp()`) para activarlo manualmente.
+* **Manejo de Denegación**: Si el usuario deniega el permiso, se proporciona un acceso directo a la configuración de la aplicación (`goToConfiguracionApp()`) para activarlo manually.
 
 ### Botones de Acción Rápida
 Cada botón utiliza un `Intent` implícito para ejecutar una función del sistema:
 
-| Acción | Descripción | Intent y URI |
-| :--- | :--- | :--- |
-| **Llamar** (`button`) | Realiza una llamada directa al número de emergencia. | `Intent.ACTION_CALL` con `Uri.parse("tel:$phoneSOS")` |
-| **Abrir URL** (`btnOpenUrl`) | Abre la URL configurada en el navegador. | `Intent.ACTION_VIEW` con `Uri.parse(completeUrl)` |
-| **Abrir Ubicación** (`btnOpenLocation`) | Abre la aplicación de mapas con la ubicación configurada. | `Intent.ACTION_VIEW` con `Uri.parse("geo:0,0?q=$encodedAddress")` |
-| **Enviar Email** (`btnOpenEmail`) | Abre la aplicación de correo con el destinatario preestablecido. | `Intent.ACTION_SENDTO` con `Uri.parse("mailto:$emailSOS")` |
+| Botón                | Acción                                  | Descripción                                                      | Intent y URI |
+|:---------------------|:----------------------------------------|:-----------------------------------------------------------------| :-- |
+| `buttonCall`         | **Llamar**                              | Realiza una llamada directa al número de emergencia.             | `Intent.ACTION_CALL` con `Uri.parse("tel:$phoneSOS")` |
+| `btnOpenUrl`         | **Abrir URL**                           | Abre la URL configurada en el navegador.                         | `Intent.ACTION_VIEW` con `Uri.parse(completeUrl)` |
+| `btnOpenLocation`    | **Abrir Ubicación**                     | Abre la aplicación de mapas con la ubicación configurada.        | `Intent.ACTION_VIEW` con `Uri.parse("geo:0,0?q=$encodedAddress")` |
+| `btnOpenEmail`       | **Enviar Email**                        | Abre la aplicación de correo con el destinatario preestablecido. | `Intent.ACTION_SENDTO` con `Uri.parse("mailto:$emailSOS")` |
+| `btnAbrirJuegoDados` | **Lanzar dado**                         | Abre la aplicación de juego de dados y cuenta un chiste          | `startActivityForResult` para `DiceActivity` |
+| `btnAbrirCalendario` | **Mostrar fecha**                       | Abre un activity en el que se muestra la fecha seleccionada   | `startActivityForResult` para `DateActivity` |
 
 ### Retorno a Configuración
-* El botón de configuración (`ivChangePhone`) borra todos los datos guardados en `SharedPreferences` y lanza `ConfActivity`, forzando al usuario a reconfigurar la aplicación.
+* El botón de configuración (`iv_change_phone`) borra todos los datos guardados en `SharedPreferences` y lanza `ConfActivity`, forzando al usuario a reconfigurar la aplicación.
 
 ---
 
@@ -64,7 +66,7 @@ Cada botón utiliza un `Intent` implícito para ejecutar una función del sistem
 
 ---
 
-Enlace del video https://drive.google.com/file/d/1c0_DTLV6EdGoBxqF_sy99lNINdK3sUwH/view?usp=drive_link
+Enlace del video https://drive.google.com/file/d/1Np0B24zUKkuIVRJljjW50STKFBJ2QKOz/view?usp=sharing
 Enlace a GitHub https://github.com/amarrey2001/practicaEvaluable
 
 ---
