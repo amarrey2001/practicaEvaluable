@@ -72,3 +72,4 @@ Enlace a GitHub https://github.com/amarrey2001/practicaEvaluable
 ---
 
 Para más información sobre el ciclo de vida de las actividades de Android, puede consultar la documentación oficial de Google: [El ciclo de vida de la actividad](https://developer.android.com/guide/components/activities/activity-lifecycle).# PracticaEvaluable2
+# PracticaEvaluable2
