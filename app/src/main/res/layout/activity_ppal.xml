@@ -6,57 +6,117 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:background="@color/material_dynamic_primary40">
+    android:background="@android:color/white"
+    android:padding="16dp">
 
-    <ImageView
+    <ImageButton
         android:id="@+id/iv_change_phone"
-        android:layout_width="79dp"
-        android:layout_height="66dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="4dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="Configuración de teléfono"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_revert" />
+        android:src="@drawable/ic_action_settings"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="@color/material_dynamic_primary40" />
 
-    <ImageView
-        android:id="@+id/btnOpenLocation"
-        android:layout_width="102dp"
-        android:layout_height="106dp"
-        android:layout_marginStart="60dp"
-        android:layout_marginBottom="272dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Acciones Rápidas"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/material_dynamic_primary40"
+        android:layout_marginTop="64dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_directions" />
-
-    <ImageView
-        android:id="@+id/button"
-        android:layout_width="86dp"
-        android:layout_height="85dp"
-        android:layout_marginEnd="56dp"
-        android:layout_marginBottom="116dp"
-        app:layout_constraintBottom_toTopOf="@+id/btnOpenEmail"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_call" />
+        app:layout_constraintTop_toTopOf="parent"/>
 
-    <ImageView
-        android:id="@+id/btnOpenEmail"
-        android:layout_width="87dp"
-        android:layout_height="94dp"
-        android:layout_marginEnd="52dp"
-        android:layout_marginBottom="64dp"
+    <LinearLayout
+        android:layout_width="380dp"
+        android:layout_height="403dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingVertical="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
-
-    <ImageView
-        android:id="@+id/btnOpenUrl"
-        android:layout_width="81dp"
-        android:layout_height="97dp"
-        android:layout_marginBottom="64dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnOpenEmail"
-        app:layout_constraintHorizontal_bias="0.319"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="?android:attr/actionModeWebSearchDrawable" />
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintVertical_bias="0.33">
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnAbrirCalendario"
+                style="@style/ActionButtonStyle"
+                android:src="@drawable/ic_action_calendar"/>
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="1dp" />
+
+            <ImageButton
+                android:id="@+id/btnAbrirJuegoDados"
+                style="@style/ActionButtonStyle"
+                android:src="@mipmap/ic_action_dado"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnOpenLocation"
+                style="@style/ActionButtonStyle"
+                android:contentDescription="Abrir Localización"
+                android:src="@drawable/ic_action_location" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="1dp" />
+
+            <ImageButton
+                android:id="@+id/buttonCall"
+                style="@style/ActionButtonStyle"
+                android:contentDescription="Hacer Llamada"
+                android:src="@drawable/ic_action_call" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnOpenUrl"
+                style="@style/ActionButtonStyle"
+                android:contentDescription="Abrir Enlace Web"
+                android:src="@drawable/ic_action_web" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="1dp" />
+
+            <ImageButton
+                android:id="@+id/btnOpenEmail"
+                style="@style/ActionButtonStyle"
+                android:contentDescription="Enviar Correo Electrónico"
+                android:src="@drawable/ic_action_email" />
+        </LinearLayout>
+
+
+
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initActionButtons() {
 
-        mainBinding.button.setOnClickListener {
+        mainBinding.buttonCall.setOnClickListener {
             permisionPhone = isPermissionCall()
             if (permisionPhone) {
                 call()
@@ -151,6 +151,22 @@ class MainActivity : AppCompatActivity() {
                 requestPermissionLauncher.launch(android.Manifest.permission.CALL_PHONE)
             }
         }
+
+        mainBinding.btnAbrirCalendario.setOnClickListener {
+
+        }
+
+        mainBinding.btnAbrirCalendario.setOnClickListener {
+            val intent = Intent(this, CalendarActivity::class.java)
+            startActivity(intent)
+        }
+
+        // 2. Botón Dados: Abre la Activity vacía (para configurar por ti luego)
+        mainBinding.btnAbrirJuegoDados.setOnClickListener {
+            val intent = Intent(this, DadoActivity::class.java)
+            startActivity(intent)
+        }
+
 
         mainBinding.btnOpenUrl.setOnClickListener {
             if (urlSOS.isNullOrEmpty()) {
@@ -194,6 +210,8 @@ class MainActivity : AppCompatActivity() {
 
             startActivity(intent)
         }
+
+
     }
 
 
